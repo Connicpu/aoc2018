@@ -36,7 +36,7 @@ fn manhattan(a: Coord, b: Coord) -> i32 {
 
 fn closest_coord(pos: Coord) -> Option<Coord> {
     let mut closest = Coord::new(0, 0);
-    let mut closest_dist = manhattan(closest, pos);
+    let mut closest_dist = MAX;
     let mut closest_count = 0;
     for c in coords() {
         let dist = manhattan(c, pos);
