@@ -27,7 +27,12 @@ fn parse_coord(input: &str) -> Option<Coord> {
 }
 
 fn coords() -> impl Iterator<Item = Coord> {
-    INPUT.split('\n').filter_map(|l| parse_coord(l))
+    use lazy_static::lazy_static;
+    lazy_static! {
+        static ref COORDS: Vec<Coord> = INPUT.split('\n').filter_map(|l| parse_coord(l)).collect();
+    }
+    
+    COORDS.iter().cloned()
 }
 
 fn manhattan(a: Coord, b: Coord) -> i32 {
