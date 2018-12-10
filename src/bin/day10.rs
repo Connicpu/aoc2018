@@ -82,6 +82,8 @@ fn main() {
 
     let mut prev_area = std::i64::MAX;
     loop {
+        sky.tick();
+
         let bounds = sky.bounds();
         let area = bounds.area();
 
@@ -90,8 +92,7 @@ fn main() {
             sky.print();
             break;
         }
-
+        
         prev_area = area;
-        sky.tick();
     }
 }
