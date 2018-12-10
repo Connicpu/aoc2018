@@ -1,6 +1,4 @@
 use std::collections::BTreeMap;
-use std::io::BufRead;
-use std::io::Cursor;
 
 static INPUT: &str = include_str!("day02.txt");
 
@@ -33,12 +31,11 @@ fn box_value(id: &str, repeats: &mut BTreeMap<char, i32>) -> (bool, bool) {
 
 fn part_1() {
     let mut repeats = BTreeMap::new();
-    let mut lines = Cursor::new(INPUT).lines();
 
     let mut twos = 0u64;
     let mut threes = 0u64;
 
-    while let Some(Ok(line)) = lines.next() {
+    for line in INPUT.lines() {
         let (has_2, has_3) = box_value(&line, &mut repeats);
         if has_2 {
             twos += 1;
@@ -72,10 +69,8 @@ fn box_common(box1: &str, box2: &str) -> String {
 }
 
 fn part_2() {
-    let mut lines = Cursor::new(INPUT).lines();
-    while let Some(Ok(box1)) = lines.next() {
-        let mut lines = Cursor::new(INPUT).lines();
-        while let Some(Ok(box2)) = lines.next() {
+    for box1 in INPUT.lines() {
+        for box2 in INPUT.lines() {
             if box_diff(&box1, &box2) == 1 {
                 println!("{} and {}", box1, box2);
                 println!("common: {}", box_common(&box1, &box2));

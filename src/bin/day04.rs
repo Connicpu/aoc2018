@@ -1,6 +1,6 @@
+use aoc2018::{extract_columns, parse_columns};
+
 use std::collections::HashMap;
-use std::io::BufRead;
-use std::io::Cursor;
 use std::str::FromStr;
 
 type GuardId = i32;
@@ -37,56 +37,71 @@ struct Event {
     action: Action,
 }
 
-fn parse_timestamp(input: &str) -> Option<Timestamp> {
-    let mut split = input.split_whitespace();
-    let date_part = split.next()?;
-    let time_part = split.next()?;
-
-    let mut split = date_part.split("-");
-    let _year = split.next()?;
-    let month = i32::from_str(split.next()?).ok()?;
-    let day = i32::from_str(split.next()?).ok()?;
-
-    let mut split = time_part.split(":");
-    let hour = i32::from_str(split.next()?).ok()?;
-    let minute = i32::from_str(split.next()?).ok()?;
-
-    let date = Date { month, day };
-    let time = Time { hour, minute };
-
-    Some(Timestamp { date, time })
+enum ParseElem {
+    Falls,
+    Asleep,
+    Wakes,
+    Up,
+    Guard,
+    Num(i32),
 }
 
-fn parse_action(input: &str) -> Option<Action> {
-    let mut split = input.split(" ");
-    Some(match split.next()? {
-        "falls" => Action::Sleep,
-        "wakes" => Action::Wake,
-        "Guard" => {
-            let id_part = split.next()?;
-            let id = GuardId::from_str(&id_part[1..]).ok()?;
-            Action::Shift(id)
+impl ParseElem {
+    fn as_num(&self) -> i32 {
+        match *self {
+            ParseElem::Num(n) => n,
+            _ => panic!(),
         }
-        _ => return None,
-    })
+    }
 }
 
-fn parse_event(input: &str) -> Option<Event> {
-    let mut split = input.split("]");
-    let timestamp_part = split.next()?.trim_start_matches('[');
-    let action_part = split.next()?;
+impl FromStr for ParseElem {
+    type Err = ();
+    fn from_str(s: &str) -> Result<ParseElem, ()> {
+        use self::ParseElem::*;
+        Ok(match s {
+            "falls" => Falls,
+            "asleep" => Asleep,
+            "wakes" => Wakes,
+            "up" => Up,
+            "Guard" => Guard,
+            _ => match s.parse() {
+                Ok(num) => ParseElem::Num(num),
+                Err(_) => return Err(()),
+            },
+        })
+    }
+}
 
-    let timestamp = parse_timestamp(&timestamp_part[1..])?;
-    let action = parse_action(action_part.trim())?;
+fn parse_timestamp(elems: &[ParseElem]) -> Timestamp {
+    let month = elems[0].as_num();
+    let day = elems[1].as_num();
+    let hour = elems[2].as_num();
+    let minute = elems[3].as_num();
 
-    Some(Event { timestamp, action })
+    Timestamp {
+        date: Date { month, day },
+        time: Time { hour, minute },
+    }
+}
+
+fn parse_action(elems: &[ParseElem]) -> Action {
+    match elems[0] {
+        ParseElem::Falls => Action::Sleep,
+        ParseElem::Wakes => Action::Wake,
+        ParseElem::Guard => Action::Shift(elems[1].as_num()),
+        _ => unreachable!()
+    }
 }
 
 fn raw_events() -> impl Iterator<Item = Event> {
     static INPUT: &str = include_str!("day04.txt");
-    Cursor::new(INPUT)
+    INPUT
         .lines()
-        .filter_map(|l| parse_event(&l.ok()?))
+        .map(|line| parse_columns(line, |c| ":#-[ ]".contains(c)))
+        .filter_map(extract_columns!([y, m, d, hour, min, action, id]))
+        .map(|data| (parse_timestamp(&data[1..5]), parse_action(&data[5..7])))
+        .map(|(timestamp, action)| Event { timestamp, action })
 }
 
 fn events() -> Vec<Event> {

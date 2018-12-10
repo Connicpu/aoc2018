@@ -70,6 +70,7 @@ impl Sky {
         }
 
         println!("+{:-<1$}+", "", (bounds.right - bounds.left + 3) as usize);
+        println!("time: {}", self.ticks);
     }
 }
 
@@ -87,7 +88,6 @@ fn main() {
         if area > prev_area {
             sky.untick();
             sky.print();
-            println!("time: {}", sky.ticks);
             break;
         }
 

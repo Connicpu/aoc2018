@@ -1,46 +1,28 @@
-use std::cmp::{max, min};
-use std::collections::{HashMap, HashSet};
-use std::i32::{MAX, MIN};
-use std::str::FromStr;
+use aoc2018::{collect_once, extract_columns, parse_columns};
 
-use math2d::Recti;
+use std::collections::{HashMap, HashSet};
+use std::i32::MAX;
+
+use math2d::{Point2i, Recti};
 
 static INPUT: &str = include_str!("day06.txt");
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-struct Coord {
-    x: i32,
-    y: i32,
-}
-
-impl Coord {
-    fn new(x: i32, y: i32) -> Self {
-        Coord { x, y }
+fn coords() -> impl Iterator<Item = Point2i> {
+    collect_once! {
+        let data: Point2i = INPUT
+            .lines()
+            .map(|line| parse_columns(line, |c| !char::is_numeric(c)))
+            .filter_map(extract_columns![(x, x)])
+            .map(|(x, y)| Point2i { x, y })
     }
 }
 
-fn parse_coord(input: &str) -> Option<Coord> {
-    let mut split = input.split(',');
-    let x = i32::from_str(split.next()?.trim()).ok()?;
-    let y = i32::from_str(split.next()?.trim()).ok()?;
-    Some(Coord::new(x, y))
-}
-
-fn coords() -> impl Iterator<Item = Coord> {
-    use lazy_static::lazy_static;
-    lazy_static! {
-        static ref COORDS: Vec<Coord> = INPUT.split('\n').filter_map(|l| parse_coord(l)).collect();
-    }
-    
-    COORDS.iter().cloned()
-}
-
-fn manhattan(a: Coord, b: Coord) -> i32 {
+fn manhattan(a: Point2i, b: Point2i) -> i32 {
     (a.x - b.x).abs() + (a.y - b.y).abs()
 }
 
-fn closest_coord(pos: Coord) -> Option<Coord> {
-    let mut closest = Coord::new(0, 0);
+fn closest_coord(pos: Point2i) -> Option<Point2i> {
+    let mut closest = Point2i::ORIGIN;
     let mut closest_dist = MAX;
     let mut closest_count = 0;
     for c in coords() {
@@ -62,39 +44,24 @@ fn closest_coord(pos: Coord) -> Option<Coord> {
 }
 
 fn bounds() -> Recti {
-    let mut rect = Recti::new(MAX, MAX, MIN, MIN);
-    for c in coords() {
-        rect.left = min(rect.left, c.x);
-        rect.top = min(rect.top, c.y);
-        rect.right = max(rect.right, c.x);
-        rect.bottom = max(rect.bottom, c.y);
-    }
-    rect
+    coords().fold(Recti::EMPTY, |r, c| r.combined_with(c))
 }
 
-fn total_dist(pos: Coord) -> i32 {
+fn total_dist(pos: Point2i) -> i32 {
     coords().map(|c| manhattan(c, pos)).sum()
 }
 
 fn main() {
-    let Recti {
-        left,
-        top,
-        right,
-        bottom,
-    } = bounds();
+    let bounds = bounds();
 
-    let mut counts = HashMap::<Coord, usize>::new();
+    let mut counts = HashMap::<Point2i, usize>::new();
     let mut inf_blacklist = HashSet::new();
 
-    for y in top - 1..=bottom + 1 {
-        for x in left - 1..=right + 1 {
-            let c = Coord::new(x, y);
-            if let Some(id) = closest_coord(c) {
-                *counts.entry(id).or_default() += 1;
-                if y == top - 1 || y == bottom + 1 || x == left - 1 || x == right + 1 {
-                    inf_blacklist.insert(id);
-                }
+    for c in bounds.points() {
+        if let Some(id) = closest_coord(c) {
+            *counts.entry(id).or_default() += 1;
+            if bounds.is_on_edge(c) {
+                inf_blacklist.insert(id);
             }
         }
     }
@@ -106,12 +73,9 @@ fn main() {
     println!("Biggest region: {}", counts.values().max().unwrap());
 
     let mut viable = 0;
-    for y in top..=bottom {
-        for x in left..=right {
-            let c = Coord::new(x, y);
-            if total_dist(c) < 10_000 {
-                viable += 1;
-            }
+    for c in bounds.points() {
+        if total_dist(c) < 10_000 {
+            viable += 1;
         }
     }
 

@@ -1,3 +1,6 @@
+#![feature(range_contains)]
+
+use aoc2018::{extract_columns, get_columns};
 use std::collections::{HashMap, HashSet};
 
 static INPUT: &str = include_str!("day07.txt");
@@ -7,17 +10,13 @@ struct Req {
     dep: char,
 }
 
-fn parse_req(input: &str) -> Option<Req> {
-    let mut split = input.split(' ');
-
-    let dep = split.by_ref().nth(1)?.chars().nth(0)?;
-    let id = split.by_ref().nth(5)?.chars().nth(0)?;
-
-    Some(Req { id, dep })
-}
-
 fn requirements() -> impl Iterator<Item = Req> {
-    INPUT.lines().filter_map(parse_req)
+    INPUT
+        .lines()
+        .map(|line| get_columns(line, |c| !c.is_ascii_uppercase()))
+        .filter_map(extract_columns![(x, x, x)])
+        .filter_map(|(_, dep, id)| Some((dep.chars().next()?, id.chars().next()?)))
+        .map(|(dep, id)| Req { dep, id })
 }
 
 #[derive(Debug)]
@@ -50,7 +49,11 @@ fn make_graph() -> Graph {
         reqs.entry(req.id).or_default().insert(req.dep);
     }
 
-    Graph { open, reqs, assigned }
+    Graph {
+        open,
+        reqs,
+        assigned,
+    }
 }
 
 fn assign_step(graph: &mut Graph) -> Option<(u32, char)> {
@@ -85,31 +88,41 @@ fn next_available(pool: &ElfPool) -> Option<usize> {
     None
 }
 
+fn complete_task(task: char, graph: &mut Graph) {
+    graph.assigned.remove(&task);
+    graph.open.remove(&task);
+}
+
 fn tick(pool: &mut ElfPool, graph: &mut Graph) {
     for (elf, time) in pool.available.iter_mut().enumerate() {
         if *time > 0 {
             *time -= 1;
             if *time == 0 {
-                //println!("Completed {}", pool.task[elf]);
-                graph.assigned.remove(&pool.task[elf]);
-                graph.open.remove(&pool.task[elf]);
+                complete_task(pool.task[elf], graph);
             }
         }
     }
 }
 
-fn complete(pool: &ElfPool, graph: &Graph) -> bool {
+fn is_complete(pool: &ElfPool, graph: &Graph) -> bool {
     pool.available.iter().all(|&t| t == 0) && graph.open.is_empty()
 }
 
-fn main() {
+fn part1() {
+    let mut graph = make_graph();
+    while let Some((_, task)) = assign_step(&mut graph) {
+        complete_task(task, &mut graph);
+        print!("{}", task);
+    }
+    println!();
+}
+
+fn part2() {
     let mut graph = make_graph();
     let mut pool = ElfPool::default();
 
     let mut ticks = 0;
     loop {
-        //println!("Tick {}", ticks);
-
         while let Some(elf) = next_available(&pool) {
             if let Some((time, task)) = assign_step(&mut graph) {
                 pool.available[elf] = time;
@@ -122,10 +135,15 @@ fn main() {
         tick(&mut pool, &mut graph);
         ticks += 1;
 
-        if complete(&pool, &graph) {
+        if is_complete(&pool, &graph) {
             break;
         }
     }
 
     println!("Ticks: {}", ticks);
+}
+
+fn main() {
+    part1();
+    part2();
 }
