@@ -70,7 +70,7 @@ impl Sky {
         }
 
         println!("+{:-<1$}+", "", (bounds.right - bounds.left + 3) as usize);
-        println!("time: {}", self.ticks);
+        println!("time: {} seconds", self.ticks);
     }
 }
 

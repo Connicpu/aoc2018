@@ -1,12 +1,11 @@
 use std::collections::VecDeque;
 
 const PLAYERS: usize = 447;
-const LAST_MARBLE_VALUE: usize = 71510 * 100;
 
 type Marble = usize;
 
-fn marbles() -> impl Iterator<Item = Marble> {
-    0..=LAST_MARBLE_VALUE
+fn marbles(max: usize) -> impl Iterator<Item = Marble> {
+    0..=max
 }
 
 #[derive(Default)]
@@ -38,12 +37,12 @@ impl Circle {
     }
 }
 
-fn game(scores: &mut [usize; PLAYERS]) -> Option<()> {
+fn game(scores: &mut [usize; PLAYERS], max: usize) -> Option<()> {
     let mut circle = Circle::default();
     circle.push(0);
     circle.push(1);
 
-    let mut marbles = marbles().skip(2);
+    let mut marbles = marbles(max).skip(2);
 
     loop {
         for elf_score in scores.iter_mut() {
@@ -60,8 +59,15 @@ fn game(scores: &mut [usize; PLAYERS]) -> Option<()> {
     }
 }
 
-fn main() {
+fn highscore(max: usize) -> usize {
     let mut scores = [0; PLAYERS];
-    game(&mut scores);
-    println!("highscore: {}", scores.iter().cloned().max().unwrap());
+    game(&mut scores, max);
+    scores.iter().cloned().max().unwrap()
+}
+
+fn main() {
+    const LAST_MARBLE_VALUE: usize = 71510;
+
+    println!("Highscore: {}", highscore(LAST_MARBLE_VALUE));
+    println!("100x Highscore: {}", highscore(LAST_MARBLE_VALUE * 100));
 }
