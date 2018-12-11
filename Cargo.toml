@@ -10,4 +10,6 @@ lazy_static = "1.2.0"
 skiplist = "0.2.10"
 
 [profile.release]
+debug = false
 lto = true
+panic = "abort"
