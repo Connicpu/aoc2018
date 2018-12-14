@@ -8,6 +8,11 @@ edition = "2018"
 math2d = { version="0.2.0-alpha1", path="../directx-rs/math2d" }
 lazy_static = "1.2.0"
 skiplist = "0.2.10"
+winit = "0.18.0"
+direct2d = { path = "../directx-rs/direct2d" }
+direct3d11 = { path = "../directx-rs/direct3d11" }
+dcommon = { path = "../directx-rs/dcommon" }
+dxgi = { path = "../directx-rs/dxgi" }
 
 [profile.release]
 debug = false
